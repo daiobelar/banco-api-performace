@@ -1,8 +1,13 @@
 import http from 'k6/http'
-import { sleep } from 'k6'
+import {check, sleep} from 'k6'
 
 export const options = {
-    iterations: 1,
+    vus: 30,
+    duration: '30s',
+    thresholds: {
+        http_req_duration: ['p(90)<3000', 'max<5000'],
+        http_req_failed: [ 'rate<0.01']
+    }
 }
 
 export default function () {
@@ -18,7 +23,15 @@ export default function () {
             'Content-Type' : 'application/json',
         },
     }
-    const resposta = http.post(url, payload, params)
-    console.log(resposta)
+    const res = http.post(url, payload, params)
+    check(res, {
+        'Validar que o Status é 200': (r) => r.status === 200,
+        'Validar que o Token é String' : (r) => typeof(r.json().token) === 'string'
+
+    })
+    sleep(1)
+
+
+
 
 }
